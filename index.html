@@ -88,12 +88,12 @@ function tickFn(){clearInterval(tick);tick=setInterval(()=>{const s=mine(),el=$(
 function stage(s){if(!s.pre)return'pre';if(s.group==null)return'wait';if(!s.ex0)return'intro';if(!s.ex1)return'lab';if(!s.sd)return'simp';if(!s.post)return'post';if(!s.ref)return'ref';return'done'}
 /* ---------- ranking & kelompok ---------- */
 function ranked(){return S.st.filter(s=>s.pre).sort((a,b)=>b.pre.score-a.pre.score||a.pre.sec-b.pre.sec||(+a.no-+b.no)||a.id.localeCompare(b.id))}
-async function makeGroups(){const R=ranked(),n=R.length;if(!n)return say('Belum ada murid yang menyelesaikan pretest.');
+async function makeGroups(){let R=ranked();const n=R.length;if(!n)return say('Belum ada murid yang menyelesaikan pretest.');
  let G=8;if(n!==32){const d=Math.max(3,Math.ceil(n/4));const v=await askv('Peringatan: jumlah murid '+n+' (bukan 32), sehingga 8 kelompok × 4 anggota tidak dapat dipaksakan. Tidak ada murid yang dihilangkan; anggota dibagi merata.\nMasukkan jumlah kelompok yang Anda setujui (disarankan '+d+'):',d);G=parseInt(v);if(!G||G<3||G>n)return say('Jumlah kelompok tidak valid (minimal 3 dan tidak melebihi jumlah murid).')}
  const nM=Math.max(1,Math.round(G*2/8)),nB=Math.max(1,Math.round(G*3/8)),nT=G-nM-nB;
  if(n!==32&&!(await ask('Setujui pembagian '+G+' kelompok ('+nM+' Mahir, '+nB+' Berkembang, '+nT+' Terbimbing) untuk '+n+' murid?')))return;
  const cats=[];for(let g=0;g<G;g++)cats.push(g<nM?'Mahir':g<nM+nB?'Berkembang':'Terbimbing');
- const base=Math.floor(n/G),ex=n%G;let i=0;for(let g=0;g<G;g++){const sz=base+(g<ex?1:0);for(let k=0;k<sz;k++){R[i].group=g+1;R[i].rank=i+1;i++}}
+ R=ranked();if(R.length!==n)return say('Jumlah murid berubah menjadi '+R.length+'. Silakan klik Bagi kelompok sekali lagi.');const base=Math.floor(n/G),ex=n%G;let i=0;for(let g=0;g<G;g++){const sz=base+(g<ex?1:0);for(let k=0;k<sz;k++){R[i].group=g+1;R[i].rank=i+1;i++}}
  S.G=G;S.cats=cats;S.made=true;save();render()}
 async function resetGroups(){if(S.st.some(s=>s.ex0))return say('Eksplorasi sudah dimulai. Kelompok tidak dapat diatur ulang.');if(!(await ask('Atur ulang pembagian kelompok?')))return;S.st.forEach(s=>{if(s.group!=null)delQ.as.add(s.id);s.group=null;s.rank=null});S.cats=[];S.made=false;save();render()}
 async function late(){const ls=ranked().filter(s=>s.group==null);if(!S.made||!ls.length)return say('Tidak ada murid terlambat.');ls.forEach(s=>{const c=s.pre.score>=80?'Mahir':s.pre.score>=60?'Berkembang':'Terbimbing';let gs=S.cats.map((x,i)=>[i+1,x]).filter(x=>x[1]===c).map(x=>x[0]);const cnt=g=>S.st.filter(x=>x.group===g).length;gs.sort((a,b)=>cnt(a)-cnt(b)||a-b);s.group=gs[0]});save();render()}
