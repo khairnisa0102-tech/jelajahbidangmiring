@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jelajah Bidang Miring</title>
+    <!-- Memuat Library Supabase resmi agar sistem sinkronisasi berjalan -->
     <script src="https://jsdelivr.net"></script>
     <style>
         body { font-family: system-ui, sans-serif; margin: 20px; background: #f0f4f8; color: #333; }
@@ -21,6 +22,7 @@
 
 <div class="card">
     <h1>⛰️ Jelajah Bidang Miring</h1>
+    <!-- Status Indikator Sinkronisasi Kelas -->
     <div id="statusSec" class="status online">☁ Tersinkron</div>
     
     <div id="guruSec">
@@ -42,13 +44,16 @@
 </div>
 
 <script>
-// Konfigurasi Database Supabase Anda
-const URL_SUPABASE = 'https://hddlkauooelfcjkyuejw.supabase.co/rest/v1/';
-const ANON_KEY = 'sb_publishable_bOKgoHKZ1tz1eYxMDCfz0g_qncFdw7q';
+// ==========================================
+// KONFIGURASI DATABASE UTUH SUPABASE ANDA
+// ==========================================
+const URL_SUPABASE = 'https://supabase.co'; 
+const ANON_KEY = 'sb_publishable_bOKgOHKz1tz1eYxMDCfz0g_qncfDw7q'; 
 
+// Inisialisasi koneksi client ke Supabase
 const supabaseClient = supabase.createClient(URL_SUPABASE, ANON_KEY);
 
-// Cek Koneksi Online/Offline
+// Fungsi Pemantau Koneksi Otomatis (☁ Tersinkron / ⚠ Offline)
 window.addEventListener('online', () => {
     document.getElementById('statusSec').textContent = '☁ Tersinkron';
     document.getElementById('statusSec').className = 'status online';
@@ -58,6 +63,7 @@ window.addEventListener('offline', () => {
     document.getElementById('statusSec').className = 'status offline';
 });
 
+// Aksi Fungsi saat Guru membuka Sesi Baru
 async function bukaSesi() {
     const pwd = document.getElementById('passGuru').value;
     const code = document.getElementById('kodeSesi').value;
@@ -68,6 +74,7 @@ async function bukaSesi() {
     alert('Sesi kelas ' + code + ' berhasil dibuka secara online!');
 }
 
+// Aksi Fungsi saat Murid mengirimkan Hasil Kuis
 async function kirimNilai() {
     const name = document.getElementById('namaMurid').value;
     const code = document.getElementById('masukKodeSesi').value;
