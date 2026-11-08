@@ -39,7 +39,7 @@ const K='jbm_v1';
 function dlg(msg,o={}){return new Promise(res=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:99;padding:16px';d.innerHTML=`<div class=card role=dialog aria-modal=true style="max-width:440px;width:100%;margin:0"><p style="white-space:pre-wrap">${esc(msg)}</p>${o.input!=null?`<input id=dli value="${esc(o.input)}">`:''}<div class=row style="justify-content:flex-end">${o.alert?'':'<button id=dlc>Batal</button>'}<button class=p id=dlo>OK</button></div></div>`;document.body.appendChild(d);const done=v=>{d.remove();res(v)};$('#dlo').onclick=()=>done(o.input!=null?$('#dli').value:true);if($('#dlc'))$('#dlc').onclick=()=>done(o.input!=null?null:false);($('#dli')||$('#dlo')).focus()})}
 const ask=m=>dlg(m),say=m=>dlg(m,{alert:1}),askv=(m,v)=>dlg(m,{input:v});
 /* ---------- sinkronisasi antarperangkat (Supabase REST) ---------- */
-const SB={url:'ISI_URL_PROYEK_SUPABASE',key:'ISI_ANON_PUBLIC_KEY'};
+const SB={url:'https://hddlkauooelfcjkyuejw.supabase.co/rest/v1/',key:'sb_publishable_bOKgoHKZ1tz1eYxMDCfz0g_qncFdw7q'};
 const ON=/^https:\/\//.test(SB.url);
 let ver=0,dirty=false,pt,pushing=false,pulling=false,lastCfg='',assignR={},idsR=[],sig='',shownStage=null;
 const cfgOf=()=>({pin:S.pin,sess:S.sess,made:S.made,G:S.G,cats:S.cats||[]});
