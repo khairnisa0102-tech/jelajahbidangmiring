@@ -1,192 +1,200 @@
 <!DOCTYPE html>
-<html lang="id"><head><meta charset="utf-8"><title>Jelajah Bidang Miring</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>
-:root{--bg:#fbf8f0;--card:#fff;--tx:#17243a;--mut:#51607a;--b:#1d5fc4;--bl:#e3edfb;--g:#1f8a5b;--gl:#dff3e8;--o:#e8710a;--bd:#d6dce8;--r:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1624;--card:#18223a;--tx:#eef2fa;--mut:#a9b6cf;--b:#7db2ff;--bl:#1d2f52;--g:#5fd6a0;--gl:#123a2b;--o:#ffa04d;--bd:#33425f;--r:#ff8a7a}}
-*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{background:var(--b);color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-:root:not([data-theme=light]) header{}
-header b{font-size:18px}header .sp{flex:1}
-main{max-width:980px;margin:0 auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:0 0 14px}
-h1,h2,h3{margin:.2em 0 .4em;line-height:1.25}
-button,.btn{font:inherit;font-weight:600;border:2px solid var(--b);background:var(--card);color:var(--b);padding:9px 16px;border-radius:10px;cursor:pointer;min-height:44px}
-button.p{background:var(--o);border-color:var(--o);color:#fff}button.g{background:var(--g);border-color:var(--g);color:#fff}
-button:disabled{opacity:.5;cursor:not-allowed}
-button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--o);outline-offset:2px}
-input,select,textarea{font:inherit;width:100%;padding:10px;border:2px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
-textarea{min-height:76px;resize:vertical}label{display:block;font-weight:600;margin:10px 0 4px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{padding:6px 12px;min-height:40px}.tabs button.on{background:var(--b);color:#fff}
-.bar{height:12px;background:var(--bl);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--g)}
-.timer{background:var(--bl);color:var(--b);padding:4px 12px;border-radius:20px;font-weight:700}.timer.w{background:var(--o);color:#fff}
-.opt{display:block;width:100%;text-align:left;margin:6px 0;font-weight:500}.opt.sel{background:var(--bl);border-color:var(--g)}
-table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left;font-size:14px}
-.sc{overflow-x:auto}.note{background:var(--gl);border-left:5px solid var(--g);padding:8px 12px;border-radius:8px;margin:8px 0}
-.warn{background:#fff3e0;color:#5a3300;border-left:5px solid var(--o);padding:8px 12px;border-radius:8px;margin:8px 0}
-.tag{display:inline-block;padding:2px 10px;border-radius:12px;background:var(--bl);font-size:13px;font-weight:600}
-.big{font-size:44px;font-weight:800;color:var(--b)}.hb{display:flex;align-items:center;gap:8px;margin:3px 0}.hb span.l{width:150px;font-size:13px}.hb .bar{flex:1}
-.mood button{font-size:26px;padding:4px 10px}.mood button.sel{background:var(--bl);border-color:var(--g)}
-small,.mut{color:var(--mut)}#sv{font-size:13px}
-</style></head><body>
-<header><b>⛰️ JELAJAH BIDANG MIRING</b><span class="sp"></span><span id="tm"></span><span id="sv" role="status"></span><button id="mode" style="min-height:36px;padding:4px 12px"></button></header>
-<main id="app"></main>
-<script>
-const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let S,me=null,view='murid',tab=0,qi=0,draft={},tick;
-const K='jbm_v1';
-function dlg(msg,o={}){return new Promise(res=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:99;padding:16px';d.innerHTML=`<div class=card role=dialog aria-modal=true style="max-width:440px;width:100%;margin:0"><p style="white-space:pre-wrap">${esc(msg)}</p>${o.input!=null?`<input id=dli value="${esc(o.input)}">`:''}<div class=row style="justify-content:flex-end">${o.alert?'':'<button id=dlc>Batal</button>'}<button class=p id=dlo>OK</button></div></div>`;document.body.appendChild(d);const done=v=>{d.remove();res(v)};$('#dlo').onclick=()=>done(o.input!=null?$('#dli').value:true);if($('#dlc'))$('#dlc').onclick=()=>done(o.input!=null?null:false);($('#dli')||$('#dlo')).focus()})}
-const ask=m=>dlg(m),say=m=>dlg(m,{alert:1}),askv=(m,v)=>dlg(m,{input:v});
-/* ---------- sinkronisasi antarperangkat (Supabase REST) ---------- */
-const SB={url:'https://hddlkauooelfcjkyuejw.supabase.co/rest/v1/',key:'sb_publishable_bOKgoHKZ1tz1eYxMDCfz0g_qncFdw7q'};
-const ON=/^https:\/\//.test(SB.url);
-let ver=0,dirty=false,pt,pushing=false,pulling=false,lastCfg='',assignR={},idsR=[],sig='',shownStage=null;
-const cfgOf=()=>({pin:S.pin,sess:S.sess,made:S.made,G:S.G,cats:S.cats||[]});
-async function sb(p,o={}){const r=await fetch(SB.url+'/rest/v1/'+p,{...o,headers:{apikey:SB.key,Authorization:'Bearer '+SB.key,'Content-Type':'application/json',...(o.headers||{})}});if(!r.ok)throw new Error(r.status);return o.method&&o.method!=='GET'?null:r.json()}
-const up=(t,rows)=>sb(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});
-const net=ok=>{const e=$('#sv');if(e)e.textContent=ok?'☁ Tersinkron '+new Date().toLocaleTimeString('id-ID'):'⚠ Offline: data aman di perangkat, dikirim ulang otomatis'};
-async function pull(){if(!ON||pushing||pulling||dirty)return;pulling=true;try{
- const full=authed||!me;
- const [c,as]=await Promise.all([sb('config?id=eq.main&select=data'),sb('assign?select=id,grp,rank')]);
- const A={};as.forEach(a=>A[a.id]=a);
- let q='students?select=id,data';if(!full){const g=A[me]?A[me].grp:null;const ids=[me,...(g!=null?as.filter(a=>a.grp===g).map(a=>a.id):[])];q+='&id=in.('+[...new Set(ids)].join(',')+')'}
- const rows=await sb(q);if(dirty||pushing)return;
- const cfg=c[0]&&c[0].data;if(cfg){S.pin=cfg.pin??null;S.sess=cfg.sess||{code:'',open:false};S.made=!!cfg.made;S.G=cfg.G||0;S.cats=cfg.cats||[];lastCfg=JSON.stringify(cfgOf())}else lastCfg='';
- assignR=A;const loc={};S.st.forEach(s=>loc[s.id]=s);const mp=full?{}:{...loc};const has=id=>rows.some(r=>r.id===id);
- rows.forEach(r=>{mp[r.id]=(r.id===me&&loc[r.id])?loc[r.id]:r.data});
- if(full&&me&&loc[me]&&!has(me)&&!loc[me].synced)mp[me]=loc[me];
- if(me&&loc[me]&&loc[me].synced&&!has(me)){delete mp[me];me=null;try{localStorage.removeItem('jbm_me')}catch(e){}ident=false}
- S.st=Object.values(mp);S.st.forEach(s=>{const a=A[s.id];s.group=a?a.grp:null;s.rank=a?a.rank:null});
- if(full)idsR=rows.map(r=>r.id);
- localStorage.setItem(K,JSON.stringify(S));
- const ns=JSON.stringify([cfgOf(),S.st.map(s=>[s.id,s.group,s.pre&&s.pre.score,s.ex0,s.ex1,s.sd,s.post&&s.post.score,!!s.ref,s.t1,s.t3,s.name])]);
- if(ns!==sig){sig=ns;onChange()}net(true)}catch(e){net(false)}finally{pulling=false}}
-function onChange(){const a=document.activeElement;if(a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName))return;if(view==='guru'){if(authed)render();return}const s=mine();if((s?stage(s):null)!==shownStage)render()}
-async function push(){if(!ON||pushing)return;pushing=true;const v=ver;try{
- const rows=S.st.filter(s=>s.id===me||(authed&&s.test)).map(s=>{const {group,rank,...d}=s;return{id:s.id,data:d}});
- if(rows.length)await up('students',rows);
- if(authed){const cfg=cfgOf();if(JSON.stringify(cfg)!==lastCfg){await up('config',[{id:'main',data:cfg}]);lastCfg=JSON.stringify(cfg)}
-  const have=new Set(S.st.map(s=>s.id));
-  for(const i of idsR.filter(i=>!have.has(i))){await sb('students?id=eq.'+i,{method:'DELETE'});await sb('assign?id=eq.'+i,{method:'DELETE'});idsR=idsR.filter(x=>x!==i);delete assignR[i]}
-  const ar=[];for(const s of S.st){const c=assignR[s.id];if(s.group!=null){if(!c||c.grp!==s.group||c.rank!==s.rank)ar.push({id:s.id,grp:s.group,rank:s.rank??null})}else if(c){await sb('assign?id=eq.'+s.id,{method:'DELETE'});delete assignR[s.id]}}
-  if(ar.length){await up('assign',ar);ar.forEach(a=>assignR[a.id]={id:a.id,grp:a.grp,rank:a.rank})}}
- S.st.forEach(s=>{if(s.id===me||s.test)s.synced=true});localStorage.setItem(K,JSON.stringify(S));if(ver===v)dirty=false;net(true)}catch(e){net(false)}finally{pushing=false}}
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jelajah Bidang Miring</title>
+    <!-- Memuat Library Supabase resmi agar sistem sinkronisasi berjalan -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-main); color: var(--text-main); padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .container { grid-template-columns: 1.2fr 1fr; } }
+        .card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid var(--border); }
+        .header { text-align: center; margin-bottom: 10px; width: 100%; max-width: 900px; position: relative; }
+        .header h1 { font-size: 1.8rem; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 8px; }
+        .online { background: #dcfce7; color: #15803d; }
+        .offline { background: #fee2e2; color: #b91c1c; }
+        .sim-canvas-container { width: 100%; background: #f1f5f9; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border); margin-bottom: 15px; }
+        canvas { display: block; width: 100%; height: auto; background: #f1f5f9; }
+        .control-group { margin-bottom: 16px; }
+        .control-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        .control-group input[type="range"] { width: 100%; height: 6px; background: #cbd5e1; border-radius: 3px; outline: none; }
+        .control-group input[type="text"], .control-group input[type="password"], .control-group input[type="number"] { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.2s; }
+        .control-group input:focus { border-color: var(--primary); }
+        .btn { display: block; width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; text-align: center; }
+        .btn:hover { background: var(--primary-hover); }
+        .data-display { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 15px; }
+        .data-box { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
+        .data-box span { display: block; font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .data-box strong { font-size: 1.2rem; color: #0f172a; }
+        .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
 
-function load(){try{S=JSON.parse(localStorage.getItem(K))}catch(e){}S=S||{pin:null,sess:{code:'',open:false},st:[],gr:{},made:false,G:0,test:false};try{me=localStorage.getItem('jbm_me')}catch(e){}}
-function save(){try{localStorage.setItem(K,JSON.stringify(S));$('#sv').textContent=(ON?'⏳ Mengirim… ':'✓ Tersimpan (lokal) ')+new Date().toLocaleTimeString('id-ID');ver++;dirty=true;clearTimeout(pt);if(ON)pt=setTimeout(push,400)}catch(e){$('#sv').textContent='⚠ Gagal menyimpan'}}
-const mine=()=>S.st.find(s=>s.id===me);
-const PRE=[["Gaya adalah ...",["tarikan atau dorongan","massa benda","jarak tempuh","lamanya gerak"]],["Satuan gaya dalam SI adalah ...",["newton (N)","joule (J)","meter (m)","kilogram (kg)"]],["Alat berikut yang termasuk pesawat sederhana adalah ...",["katrol","lampu","kabel listrik","baterai"]],["Manakah yang merupakan bidang miring?",["papan untuk menaikkan barang ke bak kendaraan","roda sepeda","jungkat-jungkit","timbangan dapur"]],["Ciri utama bidang miring adalah ...",["permukaan datar yang dipasang miring","batang yang bertumpu pada satu titik","roda yang diberi tali","dua roda bergigi"]],["Jalan di perbukitan Gunungkidul dibuat berkelok agar ...",["lintasan lebih panjang sehingga gaya yang diperlukan lebih kecil","lintasan lebih pendek","kendaraan menjadi lebih berat","gesekan menjadi nol"]],["Jalur landai untuk kursi roda dibuat panjang supaya ...",["gaya dorong lebih kecil","tinggi bertambah","berat pengguna berkurang","usaha menjadi nol"]],["Tinggi sama, panjang bidang miring ditambah. Gaya ideal yang diperlukan ...",["semakin kecil","semakin besar","tetap","menjadi nol"]],["Pada bidang miring yang sama, makin berat benda, gaya kuasa yang diperlukan ...",["makin besar","makin kecil","tetap","nol"]],["Bidang miring panjang 6 m dan tinggi 2 m. Keuntungan mekanisnya (KM = s/h) adalah ...",["3","4","8","12"]]];
-const POST=[["Bidang miring adalah ...",["permukaan miring untuk memindahkan benda ke tempat lebih tinggi/rendah dengan gaya lebih kecil","batang yang bertumpu pada titik","roda berporos","katrol tetap"]],["Pada bidang miring ideal (tanpa gesekan), yang menjadi lebih kecil adalah ...",["gaya kuasa","usaha yang dilakukan","berat benda","tinggi tujuan"]],["Contoh penerapan bidang miring adalah ...",["jalur landai kursi roda","kipas angin","lampu belajar","termos"]],["Sekrup merupakan penerapan prinsip ...",["bidang miring yang dililitkan pada silinder","tuas jenis pertama","katrol bergerak","roda bergigi"]],["Bidang miring dengan s = 5 m dan h = 1 m memiliki KM ...",["5","1","0,2","6"]],["KM sebesar 3 berarti ...",["gaya ideal sepertiga berat benda","gaya ideal tiga kali berat benda","tinggi tiga kali panjang","usaha menjadi tiga kali"]],["W = 300 N, s = 3 m, h = 1 m. Gaya ideal F = (W × h)/s adalah ...",["100 N","300 N","900 N","10 N"]],["W = 500 N, s = 5 m, h = 2 m. Gaya ideal adalah ...",["200 N","250 N","100 N","500 N"]],["Gaya ideal F = 150 N, W = 600 N, s = 8 m. Tinggi bidang miring h = ...",["2 m","4 m","1 m","3 m"]],["Dua jalur menuju tempat setinggi sama. Jalur B dua kali lebih panjang dari jalur A. Secara ideal, gaya di jalur B ...",["setengah gaya di jalur A","dua kali gaya di jalur A","sama dengan jalur A","nol"]]];
-const rot=i=>[0,1,2,3].map(k=>(k+i)%4); // urutan tampil: jawaban benar (indeks 0) berpindah posisi
-const L='ABCD';
-function fmt(t){const m=Math.floor(t/60),s=t%60;return m+':'+String(s).padStart(2,'0')}
-function tickFn(){clearInterval(tick);tick=setInterval(()=>{const s=mine(),el=$('#tm');if(!s||view!=='murid'){el.innerHTML='';return}
- const st=stage(s),M={pre:['t0',300],post:['t1',600],ref:['t3',180]}[st];if(!M||!s[M[0]]){el.innerHTML='';return}
- const left=Math.max(0,M[1]-Math.floor((Date.now()-s[M[0]])/1000));el.innerHTML='<span class="timer '+(left<=60?'w':'')+'" role=timer>⏱ '+fmt(left)+(left<=60?' · waktu hampir habis':'')+'</span>';
- if(left===0){if(st==='ref'){s.ref=s.refd||{r1:'',r2:'',r3:'',r4:'',r5:'',r6:''};s.ref.auto=true;save();render()}else submitTest(st,true)}},1000)}
-function stage(s){if(!s.pre)return'pre';if(s.group==null)return'wait';if(!s.ex0)return'intro';if(!s.ex1)return'lab';if(!s.sd)return'simp';if(!s.post)return'post';if(!s.ref)return'ref';return'done'}
-/* ---------- ranking & kelompok ---------- */
-function ranked(){return S.st.filter(s=>s.pre).sort((a,b)=>b.pre.score-a.pre.score||a.pre.sec-b.pre.sec||(+a.no-+b.no)||a.id.localeCompare(b.id))}
-async function makeGroups(){const R=ranked(),n=R.length;if(!n)return say('Belum ada murid yang menyelesaikan pretest.');
- let G=8;if(n!==32){const d=Math.max(3,Math.ceil(n/4));const v=await askv('Peringatan: jumlah murid '+n+' (bukan 32), sehingga 8 kelompok × 4 anggota tidak dapat dipaksakan. Tidak ada murid yang dihilangkan; anggota dibagi merata.\nMasukkan jumlah kelompok yang Anda setujui (disarankan '+d+'):',d);G=parseInt(v);if(!G||G<3||G>n)return say('Jumlah kelompok tidak valid (minimal 3 dan tidak melebihi jumlah murid).')}
- const nM=Math.max(1,Math.round(G*2/8)),nB=Math.max(1,Math.round(G*3/8)),nT=G-nM-nB;
- if(n!==32&&!(await ask('Setujui pembagian '+G+' kelompok ('+nM+' Mahir, '+nB+' Berkembang, '+nT+' Terbimbing) untuk '+n+' murid?')))return;
- const cats=[];for(let g=0;g<G;g++)cats.push(g<nM?'Mahir':g<nM+nB?'Berkembang':'Terbimbing');
- const base=Math.floor(n/G),ex=n%G;let i=0;for(let g=0;g<G;g++){const sz=base+(g<ex?1:0);for(let k=0;k<sz;k++){R[i].group=g+1;R[i].rank=i+1;i++}}
- S.G=G;S.cats=cats;S.made=true;save();render()}
-async function resetGroups(){if(S.st.some(s=>s.ex0))return say('Eksplorasi sudah dimulai. Kelompok tidak dapat diatur ulang.');if(!(await ask('Atur ulang pembagian kelompok?')))return;S.st.forEach(s=>{s.group=null;s.rank=null});S.cats=[];S.made=false;save();render()}
-async function late(){const ls=ranked().filter(s=>s.group==null);if(!S.made||!ls.length)return say('Tidak ada murid terlambat.');ls.forEach(s=>{const c=s.pre.score>=80?'Mahir':s.pre.score>=60?'Berkembang':'Terbimbing';let gs=S.cats.map((x,i)=>[i+1,x]).filter(x=>x[1]===c).map(x=>x[0]);const cnt=g=>S.st.filter(x=>x.group===g).length;gs.sort((a,b)=>cnt(a)-cnt(b)||a-b);s.group=gs[0]});save();render()}
-/* ---------- submit ---------- */
-function submitTest(k,auto){const s=mine();if(!s||s[k])return;const Q=k==='pre'?PRE:POST,a=draft[k]||s[k+'d']||{};let sc=0;Q.forEach((q,i)=>{if(a[i]===0)sc+=10});const t0=k==='pre'?s.t0:s.t1;s[k]={ans:a,score:sc,sec:Math.min(Math.floor((Date.now()-t0)/1000),k==='pre'?300:600)};save();qi=0;render()}
-/* ---------- render murid ---------- */
-function render(){$('#mode').textContent=view==='murid'?'🔒 Mode Guru':'👩‍🎓 Mode Murid';tickFn();if(view==='guru')return renderGuru();const s=mine();if(!s){shownStage=null;return renderHome()}shownStage=stage(s);({pre:()=>renderTest('pre'),wait:renderWait,intro:renderIntro,lab:renderLab,simp:renderSimp,post:()=>renderTest('post'),ref:renderRef,done:renderDone})[stage(s)]()}
-let ident=false;
-function renderHome(){if(!ident){$('#app').innerHTML=`<div class=card><h1>JELAJAH BIDANG MIRING</h1><p><b>Temukan Konsepnya, Buktikan Manfaatnya!</b></p><p>IPA · Kelas VIII · Pesawat Sederhana: Bidang Miring</p>${rampSVG()}<p>Tujuanmu hari ini: menjelaskan bidang miring, menemukan hubungan W, F, s, dan h, lalu menyimpulkannya bersama kelompok.</p><button class=p id=go>MULAI PETUALANGAN</button></div>`;$('#go').onclick=()=>{ident=true;render()};return}
- $('#app').innerHTML=`<div class=card><h2>Isi identitasmu</h2><label for=n>Nama lengkap</label><input id=n autocomplete=name><label for=no>Nomor presensi</label><input id=no type=number min=1 max=99><label for=kl>Kelas</label><select id=kl>${['VIIIA','VIIIB','VIIIC','VIIID','VIIIE','VIIIF','VIIIG'].map(x=>`<option>${x}</option>`).join('')}</select><label for=cd>Kode sesi (dari gurumu)</label><input id=cd autocapitalize=characters><p id=er class=warn hidden></p><button class=p id=sv2>Simpan Identitas dan Lanjutkan</button></div>`;
- $('#sv2').onclick=async()=>{await pull();const n=$('#n').value.trim(),no=$('#no').value.trim(),kl=$('#kl').value,cd=$('#cd').value.trim().toUpperCase(),er=$('#er');const bad=m=>{er.hidden=false;er.textContent=m};
- if(n.length<3)return bad('Tulis nama lengkapmu (minimal 3 huruf).');if(!(+no>0))return bad('Nomor presensi harus berupa angka.');if(!S.sess.code)return bad('Guru belum membuat sesi. Tunggu sebentar ya.');if(cd!==S.sess.code)return bad('Kode sesi belum tepat. Coba tanya gurumu.');if(!S.sess.open)return bad('Sesi belum dibuka oleh guru.');
- const dup=S.st.find(x=>x.kelas===kl&&String(x.no)===no);if(dup){if(dup.name.toLowerCase()!==n.toLowerCase())return bad('Nomor presensi '+no+' di kelas '+kl+' sudah dipakai murid lain. Periksa lagi, atau hubungi guru.');if(!(await ask('Identitas ini sudah terdaftar. Lanjutkan sebagai '+dup.name+'?')))return;me=dup.id}else{const id='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);S.st.push({id,name:n,no,kelas:kl,group:null,test:false});me=id}
- try{localStorage.setItem('jbm_me',me)}catch(e){}save();render()}}
-function renderTest(k){const s=mine(),Q=k==='pre'?PRE:POST,t=k==='pre'?'Seberapa Jauh Kamu Mengenal Bidang Miring?':'Uji Pemahamanmu!',lim=k==='pre'?5:10,tk=k==='pre'?'t0':'t1';
- if(!s[tk]){$('#app').innerHTML=`<div class=card><h2>${t}</h2><p>${Q.length} soal pilihan ganda · ${lim} menit · satu soal per layar. Setelah dikirim, jawaban tidak bisa diubah. Jika waktu habis, jawabanmu terkumpul otomatis. Jawab sebisamu — ini untuk mengenal dirimu, bukan untuk menghakimi.</p><button class=p id=st>Mulai</button></div>`;$('#st').onclick=()=>{s[tk]=Date.now();save();render()};return}
- draft[k]=draft[k]||s[k+'d']||{};const a=draft[k],i=qi,o=rot(i);
- $('#app').innerHTML=`<div class=card><div class=row><b>Soal ${i+1} dari ${Q.length}</b><span class=sp style="flex:1"></span><small>Terjawab: ${Object.keys(a).length}/${Q.length}</small></div><div class=bar><i style="width:${(i+1)/Q.length*100}%"></i></div><h3>${esc(Q[i][0])}</h3><div role=radiogroup>${o.map((oi,p)=>`<button class="opt ${a[i]===oi?'sel':''}" data-o="${oi}" role=radio aria-checked="${a[i]===oi}">${L[p]}. ${esc(Q[i][1][oi])}</button>`).join('')}</div><div class=row style="margin-top:10px"><button id=pv ${i?'':'disabled'}>← Sebelumnya</button>${i<Q.length-1?'<button id=nx class=g>Berikutnya →</button>':'<button id=sb class=p>Kirim Jawaban</button>'}</div></div>`;
- document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{a[i]=+b.dataset.o;s[k+'d']=a;save();render()});
- $('#pv').onclick=()=>{qi--;render()};if($('#nx'))$('#nx').onclick=()=>{qi++;render()};if($('#sb'))$('#sb').onclick=()=>{const m=Q.length-Object.keys(a).length;ask(m?m+' soal belum dijawab. Tetap kirim?':'Kirim jawaban sekarang?').then(y=>{if(y)submitTest(k)})}}
-function scoreCard(s,k){return `<div class=card><h2>Nilai ${k==='pre'?'pretest':'posttest'}-mu</h2><div class=big>${s[k].score}</div><p>${s[k].score>=80?'Luar biasa! Kamu sudah punya bekal yang kuat.':s[k].score>=60?'Bagus! Kamu sedang berkembang, terus jelajahi ya.':'Terima kasih sudah berusaha. Di kelompok nanti kamu akan dibantu dan membantu teman — semua bisa tumbuh.'}</p><small>Kunci jawaban dibahas guru setelah seluruh kelas selesai.</small></div>`}
-function renderWait(){const s=mine();$('#app').innerHTML=scoreCard(s,'pre')+`<div class=card><h3>Menunggu pembagian kelompok…</h3><p>Guru akan membagi kelompok. Halaman ini akan menyesuaikan saat kamu masuk ke kelompok.</p><button id=rf>Periksa lagi</button></div>`;$('#rf').onclick=()=>{load();render()};clearInterval(window.wp);window.wp=setInterval(()=>{load();const q=mine();if(q&&stage(q)!=='wait'){clearInterval(window.wp);render()}},4000)}
-/* ---------- laboratorium eksplorasi ---------- */
-const CATS=['Mahir','Berkembang','Terbimbing'],CC={Mahir:'var(--g)',Berkembang:'var(--b)',Terbimbing:'var(--o)'},catOf=g=>(S.cats||[])[g-1]||'Berkembang';
-let ws=0;
-function rampSVG(h=2,s=4,p=.45,ar=false){const k=26,x=Math.sqrt(Math.max(s*s-h*h,.01))*k,H=h*k,x0=24,y0=170,bx=x0+x*p,by=y0-H*p,L=Math.hypot(x,H),ux=x/L,uy=-H/L,a=-Math.atan2(H,x)*57.3;
-return `<svg viewBox="0 0 ${Math.max(x+90,300)} 200" style="width:100%;max-width:520px" role=img aria-label="Diagram bidang miring: panjang s ${s} m, tinggi h ${h} m"><defs><marker id=ar markerWidth=8 markerHeight=8 refX=6 refY=4 orient=auto><path d="M0,0 L8,4 L0,8z" fill="#c0392b"/></marker></defs><polygon points="${x0},${y0} ${x0+x},${y0} ${x0+x},${y0-H}" fill="#cfe0fa" stroke="#1d5fc4" stroke-width="3"/><g transform="rotate(${a} ${bx} ${by})"><rect x="${bx-14}" y="${by-26}" width="28" height="24" fill="#e8710a"/></g>${ar?`<line x1="${bx}" y1="${by-14}" x2="${bx}" y2="${by+22}" stroke="#c0392b" stroke-width="3" marker-end="url(#ar)"/><text x="${bx+8}" y="${by+24}" font-size="14" font-weight="700" fill="#c0392b">W ↓</text><line x1="${bx}" y1="${by-14}" x2="${bx+ux*44}" y2="${by-14+uy*44}" stroke="#c0392b" stroke-width="3" marker-end="url(#ar)"/><text x="${bx+ux*44+4}" y="${by-14+uy*44-4}" font-size="14" font-weight="700" fill="#c0392b">F ↗</text>`:''}<text x="${x0+x/2-30}" y="${y0-H/2-34}" font-size="14" fill="#1d5fc4" font-weight="700">s = ${s} m</text><text x="${x0+x+6}" y="${y0-H/2}" font-size="14" fill="#1f8a5b" font-weight="700">h = ${h} m</text></svg>`}
-function simHTML(id,mode){const sl=(n,l,u,mn,mx,st,v,hd)=>`<div ${hd?'hidden':''}><label for=${id}${n}>${l}: <b id=${id}${n}v>${v}</b> ${u}</label><input type=range id=${id}${n} min=${mn} max=${mx} step=${st} value=${v}></div>`;return `<div class=card><div class=grid>${sl('W','Berat benda W','N',50,500,10,200,mode<2)}${sl('s','Panjang bidang miring s','m',1,10,.5,4)}${sl('h','Tinggi bidang miring h','m',.5,5,.5,2)}</div><div class=row><button id=${id}go>▶ Gerakkan benda</button></div><div id=${id}o></div></div>`}
-function bindSim(id,mode){let p=.45,tm;const g=n=>+$('#'+id+n).value,r=n=>Math.round(n*100)/100;
- const up=()=>{let W=g('W'),s=g('s'),h=g('h');if(h>=s){h=s-.5;$('#'+id+'h').value=h}$('#'+id+'Wv').textContent=W;$('#'+id+'sv').textContent=s;$('#'+id+'hv').textContent=h;const F=W*h/s,KM=s/h;
- $('#'+id+'o').innerHTML=rampSVG(h,s,p,mode===2)+(mode===0?`<p>Panjang bidang miring s = ${s} m, tinggi h = ${h} m.</p>`:mode===1?`<p><b>KM = s/h = ${s}/${h} = ${r(KM)}</b></p><div class=note>Semakin panjang bidang miring untuk ketinggian yang sama, semakin besar keuntungan mekanisnya.</div>`:`<p><b>F = (W × h)/s = (${W} × ${h})/${s} = ${r(F)} N</b></p><div class=hb><span class=l>Berat W</span><div class=bar><i style="width:${W/5}%;background:var(--b)"></i></div><b>${W} N</b></div><div class=hb><span class=l>Gaya F</span><div class=bar><i style="width:${F/5}%;background:var(--o)"></i></div><b>${r(F)} N</b></div><small>Model ideal: gesekan diabaikan. Pada kondisi nyata, gaya yang diperlukan lebih besar.</small>`)};
- $('#'+id+'go').onclick=()=>{clearInterval(tm);p=0;const c=$('#ci');if(c)c.hidden=false;tm=setInterval(()=>{p+=.04;if(p>=1){p=1;clearInterval(tm)}up()},40)};
- window.demo=()=>{$('#'+id+'W').value=200;$('#'+id+'s').value=4;$('#'+id+'h').value=2;$('#'+id+'go').onclick()};
- document.querySelectorAll('#'+id+'W,#'+id+'s,#'+id+'h').forEach(e=>e.oninput=up);up()}
-const GAL=[['🛣️','Jalan menanjak dan berkelok di perbukitan Yogyakarta','Bidang miring langsung','Jalan dibuat miring dan berkelok sehingga lintasan lebih panjang; kendaraan naik dengan gaya lebih kecil dan lebih aman.'],['♿','Jalur landai kursi roda','Bidang miring langsung','Permukaan landai yang panjang memudahkan pengguna kursi roda naik tanpa gaya besar.'],['🛻','Papan untuk menaikkan barang ke kendaraan','Bidang miring langsung','Barang berat didorong naik papan; gayanya lebih kecil daripada mengangkat langsung.'],['🪜','Tangga','Bidang miring langsung (berundak)','Tangga memperpanjang lintasan naik sehingga setiap langkah memerlukan gaya lebih kecil.'],['🛝','Seluncuran','Bidang miring langsung','Orang atau benda meluncur turun di permukaan miring dengan mudah.'],['🔩','Sekrup','Pengembangan: bidang miring yang dililitkan pada silinder','Ulir adalah bidang miring melingkar; memutar sekrup menghasilkan gerak maju dengan gaya kecil.'],['🔪','Pisau','Pengembangan: baji','Baji tersusun dari bidang miring; gaya kecil dapat membelah atau memotong benda.'],['🪓','Kapak','Pengembangan: baji','Mata kapak berbentuk baji sehingga dapat membelah kayu.']];
-function galHTML(n){return `<div class=grid>${GAL.slice(0,n).map((x,i)=>`<button data-gi=${i} aria-label="${esc(x[1])}" style="text-align:left;font-weight:500"><span style="font-size:34px">${x[0]}</span><br>${esc(x[1])}</button>`).join('')}</div><div id=gi class=note aria-live=polite>Klik salah satu gambar untuk membaca penjelasannya.</div>`}
-const SCM=['Eksplorasi bebas: rumuskan sendiri ciri bidang miring dari gambar dan simulasi. Tantangan: adakah benda sehari-hari yang kamu kira bidang miring padahal bukan? Beri alasan.','Ubah s dan h sesuka kelompokmu. Tantangan: temukan sendiri pola KM ketika s diperbesar dua kali dengan h tetap. Uji dengan beberapa nilai.','Jika berat benda tetap dan ketinggian tidak berubah, bagaimana perubahan gaya kuasa ketika panjang bidang miring diperbesar dua kali? Rancang pengujianmu sendiri. Tantangan: bagaimana KM berhubungan dengan perbandingan W dan F?','Kelompokkan contoh menjadi penerapan langsung dan pengembangan prinsip. Tantangan: rancang jalur ke tempat setinggi 20 m untuk beban 500 N; apa yang kamu pertimbangkan?'];
-const SCB=['Pertanyaan pemandu: apa persamaan bentuk gambar-gambar ini? Tekan ▶ dan amati: apa yang berubah pada ketinggian benda? Hubungkan dengan fungsi bidang miring.','Petunjuk: geser s, biarkan h tetap, amati KM. Contoh: s = 4 m, h = 2 m → KM = 4/2 = 2. Pertanyaan: apa yang terjadi pada KM ketika s bertambah?','Petunjuk: gunakan tiga slider. Contoh nilai awal W = 200 N, s = 4 m, h = 2 m → F = (200 × 2)/4 = 100 N. Amati perubahan gaya ketika panjang bertambah, sedangkan tinggi dan berat tetap. Mengapa F lebih kecil daripada W?','Pertanyaan pemandu: klik tiap gambar dan baca penjelasannya. Mana yang bidang miring langsung, mana pengembangan prinsipnya? Apa manfaatnya bagi manusia?'];
-const SCT=[['Lihat keempat gambar.','Perhatikan: semuanya memiliki permukaan miring.','Tekan tombol ▶ Gerakkan benda.','Perhatikan: benda naik ke tempat yang lebih tinggi.'],['Perhatikan s (panjang bidang miring) dan h (tinggi).','Atur s = 4 m dan h = 2 m. Hitung: KM = 4 ÷ 2 = 2.','Ubah s menjadi 8 m. Hitung: KM = 8 ÷ 2 = 4.','Bandingkan kedua nilai KM. Apa yang kamu temukan?'],['Perhatikan berat benda (W).','Perhatikan tinggi bidang miring (h).','Perhatikan panjang bidang miring (s).','Ubah panjang bidang miring.','Amati perubahan gaya (F) yang diperlukan.'],['Klik sebuah gambar.','Baca nama dan jenisnya: langsung atau pengembangan.','Baca manfaatnya.','Ulangi untuk gambar lain.']];
-const STEPS=['Tulis rumus: F = (W × h)/s','Masukkan nilai: F = (200 × 2)/4','Kalikan bagian atas: F = 400/4','Bagi: F = 100 N'];
-function scafHTML(c,t){if(c==='Mahir')return `<div class=note><b>Tantangan:</b> ${SCM[t]}</div>`;if(c==='Berkembang')return `<div class=note><b>Panduan:</b> ${SCB[t]}</div>`;
- let h=`<div class=note><b>Ikuti langkah berikut:</b><ol>${SCT[t].map(x=>`<li>${x}</li>`).join('')}</ol></div>`;
- if(t===0)h+='<div class=note><b>Penjelasan awal:</b> bidang miring adalah permukaan miring yang membantu memindahkan benda ke tempat lebih tinggi dengan gaya yang lebih kecil.</div>';
- if(t===1)h+='<button id=rdm>↻ Ulangi demonstrasi</button>';
- if(t===2)h+=`<div class=card><b>Arti simbol</b><br>W = berat benda (newton, N), arah ke bawah<br>F = gaya kuasa (N), sejajar bidang miring<br>s = panjang bidang miring (m)<br>h = tinggi bidang miring (m)</div><div class=card><b>Contoh perhitungan bertahap</b>${STEPS.slice(0,ws).map(x=>`<p>${x}</p>`).join('')}<div class=row><button id=nxs ${ws>=4?'disabled':''}>Langkah berikutnya</button><button id=rdm>↻ Ulangi demonstrasi</button></div></div>`;return h}
-function renderIntro(){const s=mine(),c=catOf(s.group),m=S.st.filter(x=>x.group===s.group);
- $('#app').innerHTML=`<div class=card style="border-left:8px solid ${CC[c]}"><span class=tag>Laboratorium Eksplorasi ${c}</span><h2>Kelompok ${s.group}</h2><p>Anggota: ${m.map(x=>esc(x.name)+' ('+x.no+')').join(', ')}</p><p><b>Tujuan:</b> mengamati simulasi untuk menemukan pengertian bidang miring, keuntungan mekanis, serta hubungan W, F, s, dan h.</p><ul><li>Jelajahi keempat bagian dengan bebas, tanpa batas waktu.</li><li>Tidak perlu mengetik jawaban di sini. Catat hasil pengamatan pada LKM fisik dari gurumu.</li><li>Tekan FINISH jika kelompokmu sudah selesai.</li></ul><small>Kategori ini pemetaan sementara, bukan label kemampuan. Semua murid menuju tujuan belajar yang sama.</small><p><button class=p id=stt>START</button></p></div>`;$('#stt').onclick=()=>{s.ex0=Date.now();tab=0;save();render()}}
-const LT=['Pengertian Bidang Miring','Keuntungan Mekanis','Hubungan W, F, s, dan h','Kehidupan Sehari-hari'];
-function renderLab(){const s=mine(),c=catOf(s.group);let b='';
- if(tab===0)b=`<div class=card><h3>Eksplorasi 1 · Pengertian dan karakteristik</h3>${scafHTML(c,0)}${galHTML(4)}${simHTML('c',0)}<div id=ci class=note hidden><b>Konsep:</b> bidang miring adalah pesawat sederhana berupa permukaan miring untuk memindahkan benda ke tempat lebih tinggi atau lebih rendah dengan gaya yang lebih kecil.</div></div>`;
- if(tab===1)b=`<div class=card><h3>Eksplorasi 2 · Keuntungan mekanis</h3>${scafHTML(c,1)}<p>Contoh awal: s = 4 m, h = 2 m, KM = 2.</p>${simHTML('a',1)}</div>`;
- if(tab===2)b=`<div class=card><h3>Eksplorasi 3 · Hubungan W, F, s, dan h</h3>${scafHTML(c,2)}${simHTML('b',2)}</div>`;
- if(tab===3)b=`<div class=card><h3>Eksplorasi 4 · Bidang miring di sekitar kita</h3>${scafHTML(c,3)}${galHTML(8)}<div class=note>Pisau dan kapak adalah <b>baji</b>; sekrup adalah <b>bidang miring yang dililitkan pada silinder</b>.</div></div>`;
- $('#app').innerHTML=`<div class=card style="border-left:8px solid ${CC[c]}"><span class=tag>Laboratorium Eksplorasi ${c}</span> <b>Kelompok ${s.group}</b><p class=mut>Amati setiap simulasi dengan cermat. Diskusikan hasil pengamatan bersama kelompokmu dan catat informasi penting pada LKM fisik yang telah diberikan guru.</p></div><div class=tabs role=tablist>${LT.map((n,i)=>`<button role=tab class="${tab===i?'on':''}" data-t=${i}>${i+1}. ${n}</button>`).join('')}</div>${b}<div class=card><button class=p id=fn>FINISH</button></div>`;
- document.querySelectorAll('.tabs button').forEach(x=>x.onclick=()=>{tab=+x.dataset.t;render()});
- document.querySelectorAll('[data-gi]').forEach(x=>x.onclick=()=>{const g=GAL[+x.dataset.gi];$('#gi').innerHTML='<b>'+esc(g[1])+'</b><br><span class=tag>'+esc(g[2])+'</span><br>'+esc(g[3]);const q=$('#ci');if(q)q.hidden=false});
- if(tab===0)bindSim('c',0);if(tab===1)bindSim('a',1);if(tab===2)bindSim('b',2);
- if($('#nxs'))$('#nxs').onclick=()=>{ws++;render()};if($('#rdm'))$('#rdm').onclick=()=>{ws=0;render();setTimeout(()=>window.demo&&window.demo(),50)};
- $('#fn').onclick=()=>ask('Apakah kelompokmu sudah selesai melakukan eksplorasi?').then(y=>{if(y){s.ex1=Date.now();save();render()}})}
-function renderSimp(){const s=mine();$('#app').innerHTML=`<div class=card><h2>Ruang Utama · Menyusun Simpulan</h2><p>Setelah melakukan eksplorasi, diskusikan hasil pengamatan bersama kelompokmu dan tuliskan kesimpulan pada LKM yang telah diberikan guru.</p><p class=mut>Tidak ada kolom jawaban dan tidak ada timer di halaman ini.</p><button class=p id=sd>SELESAI MENYUSUN SIMPULAN</button></div>`;$('#sd').onclick=()=>{s.sd=Date.now();save();render()}}
-function renderRef(){const s=mine(),r=s.refd||{};if(!s.t3){$('#app').innerHTML=scoreCard(s,'post')+`<div class=card><h2>Ceritakan Pengalaman Belajarmu!</h2><p>Refleksi berlangsung 3 menit setelah kamu menekan tombol mulai. Jawaban tersimpan otomatis.</p><button class=p id=sr>Mulai refleksi</button></div>`;$('#sr').onclick=()=>{s.t3=Date.now();save();render()};return}const O=['Mengamati gambar dan video','Melakukan eksplorasi dan simulasi','Berdiskusi bersama kelompok','Membaca penjelasan konsep','Menganalisis contoh kehidupan sehari-hari','Mendengarkan penjelasan guru'],M=[['😄','Sangat senang'],['🙂','Senang'],['😐','Biasa saja'],['😕','Kurang nyaman'],['😟','Tidak nyaman']];
- $('#app').innerHTML=scoreCard(s,'post')+`<div class=card><h2>Ceritakan Pengalaman Belajarmu!</h2><p class=mut>Tidak ada jawaban benar atau salah. Jujur saja ya, 5 menit cukup.</p><label for=r1>1. Apa pengetahuan baru yang kamu peroleh setelah mempelajari bidang miring?</label><textarea id=r1>${esc(r.r1||'')}</textarea><label for=r2>2. Aktivitas apa yang paling membantumu memahami materi?</label><select id=r2><option value="">Pilih…</option>${O.map(o=>`<option ${r.r2===o?'selected':''}>${o}</option>`).join('')}</select><label for=r3>3. Bagian mana yang masih sulit kamu pahami?</label><textarea id=r3>${esc(r.r3||'')}</textarea><label for=r4>4. Apa yang kamu lakukan ketika mengalami kesulitan belajar?</label><textarea id=r4>${esc(r.r4||'')}</textarea><label>5. Bagaimana perasaanmu selama pembelajaran?</label><div class=mood role=radiogroup>${M.map(m=>`<button role=radio aria-checked="${r.r5===m[1]}" class="${r.r5===m[1]?'sel':''}" data-m="${m[1]}" aria-label="${m[1]}" title="${m[1]}">${m[0]}<br><small>${m[1]}</small></button>`).join(' ')}</div><label for=r6>6. Apa kontribusi yang telah kamu berikan kepada kelompokmu?</label><textarea id=r6>${esc(r.r6||'')}</textarea><p id=er class=warn hidden></p><button class=p id=ok style="margin-top:10px">Kirim Refleksi</button></div>`;
- const sv=()=>{s.refd={r1:$('#r1').value,r2:$('#r2').value,r3:$('#r3').value,r4:$('#r4').value,r5:s.refd?.r5||'',r6:$('#r6').value};save()};
- document.querySelectorAll('#r1,#r2,#r3,#r4,#r6').forEach(e=>e.oninput=sv);document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sv();s.refd.r5=b.dataset.m;save();render()});
- $('#ok').onclick=()=>{sv();const d=s.refd;const e=!d.r1.trim()||!d.r2||!d.r5||!d.r6.trim();ask(e?'Ada bagian yang belum diisi. Tetap kirim refleksi?':'Kirim refleksi sekarang?').then(y=>{if(y){s.ref=d;save();render()}})}}
-function renderDone(){const s=mine(),d=s.post.score-s.pre.score;$('#app').innerHTML=`<div class=card><h1>Selamat! Petualangan Belajarmu Selesai!</h1><h3>${esc(s.name)} · ${s.kelas} · Kelompok ${s.group}</h3><div class=grid><div class=card>Pretest<div class=big>${s.pre.score}</div></div><div class=card>Posttest<div class=big>${s.post.score}</div></div><div class=card>Perkembangan<div class=big>${d>0?'+':''}${d}</div></div></div><div class=note>Hebat! Hari ini kamu telah belajar bahwa pengetahuan tidak hanya ditemukan dalam buku, tetapi juga melalui pengamatan, percobaan, diskusi, dan pengalaman sehari-hari.</div><div class=card><b>Ingat selalu:</b><br>KM = s/h<br>F = (W × h)/s<br>F × s = W × h (model ideal tanpa gesekan)</div><button class=p id=hm>🏠 Kembali ke Halaman Awal</button><p><small>Data belajarmu tetap tersimpan. Masuk lagi dengan identitas dan kode sesi sesuai arahan gurumu.</small></p></div>`;$('#hm').onclick=()=>ask('Kembali ke halaman awal? Data belajarmu tetap tersimpan.').then(y=>{if(!y)return;me=null;try{localStorage.removeItem('jbm_me')}catch(e){}ident=false;tab=0;qi=0;ws=0;draft={};render()})}
-/* ---------- guru ---------- */
-let gt=0;
-async function hash(p){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('jbm:'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-let authed=false;
-function renderGuru(){if(!authed){$('#app').innerHTML=`<div class=card><h2>Dashboard Guru</h2>${S.pin?'<label for=pw>Kata sandi guru</label>':'<p class=note>Buat kata sandi guru (minimal 6 karakter). Disimpan sebagai hash di perangkat ini, bukan di kode.</p><label for=pw>Kata sandi baru</label>'}<input id=pw type=password><p id=er class=warn hidden></p><button class=p id=lg>${S.pin?'Masuk':'Buat & Masuk'}</button> <button id=rsa>Lupa kata sandi? Reset semua data</button></div>`;$('#rsa').onclick=async()=>{const v=await askv('Ini akan MENGHAPUS semua data (murid, nilai, kelompok, refleksi, dan kata sandi guru) di perangkat ini. Ketik RESET untuk melanjutkan:','');if(v!=='RESET')return;try{localStorage.removeItem(K);localStorage.removeItem('jbm_me')}catch(e){}load();me=null;ident=false;authed=false;view='murid';tab=0;ws=0;render()};$('#lg').onclick=async()=>{const p=$('#pw').value;if(p.length<6){$('#er').hidden=false;$('#er').textContent='Minimal 6 karakter.';return}const h=await hash(p);await pull();if(!S.pin){S.pin=h;save()}if(S.pin===h){authed=true;render()}else{$('#er').hidden=false;$('#er').textContent='Kata sandi salah.'}};return}
- const R=ranked(),G=S.G,cat=v=>v>=80?'Mahir':v>=60?'Berkembang':'Memerlukan pendampingan',avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:'-';
- const pre=R.map(s=>s.pre.score),post=S.st.filter(s=>s.post).map(s=>s.post.score);
- const T=['Ringkasan','Peringkat','Kelompok','Pemantauan','Posttest','Refleksi','Ekspor'];
- let b='';
- if(gt===0){const cs=['Memerlukan pendampingan','Berkembang','Mahir'].map(c=>[c,R.filter(s=>cat(s.pre.score)===c).length]);const mo={};S.st.filter(s=>s.ref).forEach(s=>mo[s.ref.r5]=(mo[s.ref.r5]||0)+1);
-  b=`<div class=card><h3>Sesi</h3><div class=row><input id=cd placeholder="Kode sesi, mis. IPA8A" value="${esc(S.sess.code)}" style="max-width:220px"><button id=sc>Simpan kode</button><button class="${S.sess.open?'':'p'}" id=op>${S.sess.open?'Tutup sesi':'Buka sesi'}</button></div><small>Status: ${S.sess.open?'DIBUKA':'DITUTUP'}</small></div><div class=card><div class=grid><div>Murid masuk<div class=big>${S.st.length}</div></div><div>Sudah pretest<div class=big>${R.length}</div></div><div>Rata-rata pretest<div class=big>${avg(pre)}</div></div><div>Tertinggi/terendah<div class=big style="font-size:28px">${pre.length?Math.max(...pre)+' / '+Math.min(...pre):'-'}</div></div><div>Sudah posttest<div class=big>${post.length}</div></div><div>Rata-rata posttest<div class=big>${avg(post)}</div></div></div></div><div class=card><h3>Distribusi pemahaman awal (sementara, bukan label permanen)</h3>${cs.map(c=>`<div class=hb><span class=l>${c[0]}</span><div class=bar><i style="width:${R.length?c[1]/R.length*100:0}%"></i></div><b>${c[1]}</b></div>`).join('')}</div><div class=card><h3>Suasana hati</h3>${Object.entries(mo).map(([k,v])=>`<div class=hb><span class=l>${k}</span><div class=bar><i style="width:${v/S.st.filter(s=>s.ref).length*100}%"></i></div><b>${v}</b></div>`).join('')||'<small>Belum ada refleksi.</small>'}</div><div class=card><h3>Reset untuk kelas berikutnya</h3><p>Menghapus <b>seluruh pekerjaan murid</b> (identitas, pretest, kelompok, eksplorasi, posttest, refleksi), termasuk data kelas sungguhan. Kata sandi guru dipertahankan, sesi ditutup, dan kode sesi dapat diganti. <b>Unduh rekap CSV dulu</b> di tab Ekspor.</p><button id=rk style="border-color:var(--r);color:var(--r)">Reset semua pekerjaan murid</button></div><div class=card><h3>Uji fungsi</h3><p class=warn>Membuat 32 murid uji (ditandai "UJI") hanya untuk mencoba pembagian kelompok. Hapus sebelum pembelajaran sebenarnya.</p><button id=dm>Buat 32 murid uji</button> <button id=dd>Hapus semua data uji</button></div>`}
- if(gt===1)b=`<div class="card sc"><table><tr><th>#<th>Nama<th>Presensi<th>Kelas<th>Pretest<th>Waktu<th>Kategori</tr>${R.map((s,i)=>`<tr><td>${i+1}<td>${esc(s.name)}${s.test?' <span class=tag>UJI</span>':''}<td>${s.no}<td>${s.kelas}<td>${s.pre.score}<td>${fmt(s.pre.sec)}<td>${cat(s.pre.score)}</tr>`).join('')}</table><small>Urutan: nilai ↓, waktu ↑, nomor presensi ↑. Peringkat hanya untuk guru.</small></div>`;
- if(gt===2){b=`<div class=card><div class=row><button class=p id=mk ${S.made?'disabled':''}>Bagi kelompok berdasarkan ranking (TaRL)</button><button id=rs>Atur ulang</button><button id=lt>Tempatkan murid terlambat</button></div><small>Untuk 32 murid: ranking 1–8 → Mahir (K1–2), 9–20 → Berkembang (K3–5), 21–32 → Terbimbing (K6–8). Kategori bersifat sementara.</small></div>`+CATS.map(c=>`<h3 style="border-left:8px solid ${CC[c]};padding-left:8px">Ruang ${c}</h3><div class=grid>${(S.cats||[]).map((x,i)=>x===c?i+1:0).filter(Boolean).map(g=>`<div class=card style="border-top:6px solid ${CC[c]}"><h3>Kelompok ${g} <span class=tag>${c}</span></h3>${R.filter(s=>s.group===g).map(s=>`${esc(s.name)} (${s.no}) · ${s.pre.score} <small>#${R.indexOf(s)+1}</small><br>`).join('')||'<small>Kosong</small>'}</div>`).join('')}</div>`).join('')}
- if(gt===3){const t=x=>x?new Date(x).toLocaleTimeString('id-ID'):'-';b=`<div class="card sc"><table><tr><th>Nama<th>Pretest<th>Rank<th>Kategori<th>Kel.<th>START<th>FINISH<th>Durasi<th>Simpulan<th>Posttest<th>Refleksi</tr>${S.st.map(s=>`<tr><td>${esc(s.name)}<td>${s.pre?s.pre.score:'belum'}<td>${s.pre?R.indexOf(s)+1:'-'}<td>${s.group?catOf(s.group):'-'}<td>${s.group??'-'}<td>${t(s.ex0)}<td>${t(s.ex1)}<td>${s.ex0&&s.ex1?fmt(Math.round((s.ex1-s.ex0)/1000)):'-'}<td>${s.sd?'✓':'-'}<td>${s.post?s.post.score:(s.t1?'mengerjakan':'belum')}<td>${s.ref?'✓':(s.t3?'mengisi':'belum')}</tr>`).join('')}</table></div>`}
- if(gt===4)b=`<div class="card sc"><table><tr><th>Nama<th>Kelas<th>Pre<th>Post<th>Selisih</tr>${S.st.map(s=>`<tr><td>${esc(s.name)}<td>${s.kelas}<td>${s.pre?.score??'-'}<td>${s.post?.score??'-'}<td>${s.pre&&s.post?s.post.score-s.pre.score:'-'}</tr>`).join('')}</table></div>`;
- if(gt===5)b=S.st.filter(s=>s.ref).map(s=>`<div class=card><b>${esc(s.name)}</b> ${s.ref.r5}<br><small>Baru: ${esc(s.ref.r1)}<br>Membantu: ${esc(s.ref.r2)}<br>Sulit: ${esc(s.ref.r3)}<br>Cara: ${esc(s.ref.r4)}<br>Kontribusi: ${esc(s.ref.r6)}</small></div>`).join('')||'<div class=card>Belum ada refleksi.</div>';
- if(gt===6)b=`<div class=card><button class=g id=ex>Unduh rekap CSV</button><p><small>Jika unduhan tidak tersedia di tampilan ini, berkas disalin ke papan klip.</small></p></div>`;
- $('#app').innerHTML=`<div class=tabs>${T.map((t,i)=>`<button class="${gt===i?'on':''}" data-g=${i}>${t}</button>`).join('')}</div>`+b;
- document.querySelectorAll('[data-g]').forEach(x=>x.onclick=()=>{gt=+x.dataset.g;render()});
- const on=(i,f)=>{if($('#'+i))$('#'+i).onclick=f};
- on('sc',()=>{S.sess.code=$('#cd').value.trim().toUpperCase();save();render()});on('op',()=>{if(!S.sess.code)return say('Isi kode sesi dahulu.');S.sess.open=!S.sess.open;save();render()});
- on('mk',makeGroups);on('rs',resetGroups);on('lt',late);
- on('rk',async()=>{if(!(await ask('Hapus SEMUA pekerjaan murid? Tindakan ini tidak bisa dibatalkan. Pastikan rekap sudah diunduh.')))return;const v=await askv('Ketik HAPUS untuk mengonfirmasi:','');if(v!=='HAPUS')return;S.st=[];S.gr={};S.cats=[];S.made=false;S.G=0;S.sess.open=false;try{localStorage.removeItem('jbm_me')}catch(e){}me=null;save();render()});on('dm',()=>{for(let i=1;i<=32;i++){const sc=Math.min(100,Math.round(Math.random()*10)*10);S.st.push({id:'t'+i+Date.now(),name:'Murid Uji '+i,no:String(i),kelas:'VIIIA',group:null,test:true,pre:{ans:{},score:sc,sec:60+Math.floor(Math.random()*200)}})}save();render()});
- on('dd',async()=>{if(!(await ask('Hapus semua data uji?')))return;S.st=S.st.filter(s=>!s.test);S.made=false;S.gr={};S.st.forEach(s=>s.group=null);save();render()});
- on('ex',async()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const rows=[['Nama','Presensi','Kelas','Kelompok','Kategori TaRL','Ranking','Pretest','Waktu pretest (dtk)','Posttest','Selisih','Suasana hati','Pengetahuan baru','Aktivitas membantu','Kesulitan','Cara mengatasi','Kontribusi','Mulai eksplorasi','Selesai eksplorasi','Durasi eksplorasi (dtk)','Simpulan'],...S.st.map(s=>[s.name,s.no,s.kelas,s.group??'',s.group?catOf(s.group):'',s.pre?R.indexOf(s)+1:'',s.pre?.score??'',s.pre?.sec??'',s.post?.score??'',s.pre&&s.post?s.post.score-s.pre.score:'',s.ref?.r5??'',s.ref?.r1??'',s.ref?.r2??'',s.ref?.r3??'',s.ref?.r4??'',s.ref?.r6??'',s.ex0?new Date(s.ex0).toISOString():'',s.ex1?new Date(s.ex1).toISOString():'',s.ex0&&s.ex1?Math.round((s.ex1-s.ex0)/1000):'',s.sd?'ya':''])].map(r=>r.map(q).join(',')).join('\n');
-  try{const d=await claude.use('downloads');if(d){await d.save({filename:'rekap-bidang-miring.csv',data:new Blob(['\ufeff'+rows],{type:'text/csv'})});return}}catch(e){}try{await navigator.clipboard.writeText(rows);say('CSV disalin ke papan klip.')}catch(e){askv('Salin CSV:',rows.slice(0,3000))}})}
-$('#mode').onclick=()=>{view=view==='murid'?'guru':'murid';render()};
-window.addEventListener('storage',e=>{if(e.key===K&&!/TEXTAREA|INPUT/.test(document.activeElement.tagName)){load();render()}});
-load();render();if(ON){pull();setInterval(()=>{if(dirty)push();else pull()},4000)}
-</script></body></html>
+<div class="header">
+    <h1>⛰️ Jelajah Bidang Miring</h1>
+    <div id="statusSec" class="status-badge online">● ☁ Tersinkron</div>
+</div>
+
+<div class="container">
+    <!-- Kiri: Simulasi Visual Visual -->
+    <div class="card">
+        <div class="section-title">🕹️ Simulasi Visual</div>
+        <div class="sim-canvas-container">
+            <canvas id="simCanvas" width="500" height="300"></canvas>
+        </div>
+        <div class="control-group">
+            <label id="labelSudut">Sudut Kemiringan: 30°</label>
+            <input type="range" id="inputSudut" min="10" max="60" value="30" oninput="updateSimulasi()">
+        </div>
+        <div class="control-group">
+            <label id="labelMassa">Massa Balok: 5 kg</label>
+            <input type="range" id="inputMassa" min="1" max="10" value="5" oninput="updateSimulasi()">
+        </div>
+        <div class="data-display">
+            <div class="data-box"><span>Gaya Berat (W)</span><strong id="valW">50 N</strong></div>
+            <div class="data-box"><span>Gaya Sejajar (F)</span><strong id="valF">25.0 N</strong></div>
+            <div class="data-box"><span>Keuntungan Mekanis</span><strong id="valKM">2.0</strong></div>
+            <div class="data-box"><span>Efisiensi</span><strong>100%</strong></div>
+        </div>
+    </div>
+
+    <!-- Kanan: Panel Integrasi Kelas & Kuis -->
+    <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+            <div class="section-title">👨‍🏫 Panel Guru (Sesi Kelas)</div>
+            <div class="grid-2">
+                <div class="control-group">
+                    <input type="password" id="passGuru" placeholder="Sandi Guru">
+                </div>
+                <div class="control-group">
+                    <input type="text" id="kodeSesi" placeholder="Kode Sesi (e.g. FISIKA1)">
+                </div>
+            </div>
+            <button class="btn" onclick="bukaSesi()">Buka Sesi Kelas Baru</button>
+        </div>
+
+        <div>
+            <div class="section-title">✍️ Evaluasi Murid (Kirim Nilai)</div>
+            <div class="control-group">
+                <input type="text" id="namaMurid" placeholder="Nama Lengkap Siswa">
+            </div>
+            <div class="grid-2">
+                <div class="control-group">
+                    <input type="text" id="masukKodeSesi" placeholder="Kode Sesi">
+                </div>
+                <div class="control-group">
+                    <input type="number" id="nilaiKuis" placeholder="Nilai Kuis (0-100)">
+                </div>
+            </div>
+            <button class="btn" style="background: #10b981;" onclick="kirimNilai()">Kirim Hasil Kuis</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// KONFIGURASI DATABASE UTUH SUPABASE ANDA
+// ==========================================
+const URL_SUPABASE = 'https://supabase.co'; 
+const ANON_KEY = 'sb_publishable_bOKgOHKz1tz1eYxMDCfz0g_qncfDw7q'; 
+
+const supabaseClient = supabase.createClient(URL_SUPABASE, ANON_KEY);
+
+// Fungsi Pemantau Koneksi Otomatis (☁ Tersinkron / ⚠ Offline)
+window.addEventListener('online', () => {
+    document.getElementById('statusSec').textContent = '● ☁ Tersinkron';
+    document.getElementById('statusSec').className = 'status-badge online';
+});
+window.addEventListener('offline', () => {
+    document.getElementById('statusSec').textContent = '● ⚠ Offline';
+    document.getElementById('statusSec').className = 'status-badge offline';
+});
+
+// Sistem Animasi & Render Canvas Simulasi Bidang Miring
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+
+function updateSimulasi() {
+    const sudut = parseInt(document.getElementById('inputSudut').value);
+    const massa = parseInt(document.getElementById('inputMassa').value);
+    
+    document.getElementById('labelSudut').textContent = `Sudut Kemiringan: ${sudut}°`;
+    document.getElementById('labelMassa').textContent = `Massa Balok: ${massa} kg`;
+    
+    const g = 10;
+    const berat = massa * g;
+    const rad = sudut * (Math.PI / 100);
+    const gayaSejajar = berat * Math.sin(rad);
+    const km = 1 / Math.sin(rad);
+    
+    document.getElementById('valW').textContent = `${berat} N`;
+    document.getElementById('valF').textContent = `${gayaSejajar.toFixed(1)} N`;
+    document.getElementById('valKM').textContent = km.toFixed(1);
+    
+    // Gambar Ulang Canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Dasar & Papan Miring
+    ctx.beginPath();
+    ctx.moveTo(50, 250);
+    ctx.lineTo(450, 250); // Lantai bawah
+    
+    const tebalX = 400;
+    const tinggiY = tebalX * Math.tan(rad);
+    const targetY = 250 - Math.min(tinggiY, 180);
+    
+    ctx.lineTo(50, targetY); // Papan miring naik
+    ctx.closePath();
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fill();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
+    // Kotak Beban Balok di Atas Papan
+    ctx.save();
+    ctx.translate(220, 250 - (Math.min(tinggiY, 180)/2));
+    ctx.rotate(-rad);
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(-25, -25, 50, 50);
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-25, -25, 50, 50);
+    ctx.restore();
+}
+
+// Jalankan simulasi visual pertama kali saat halaman dimuat
+updateSimulasi();
+
+// Fungsi Backend API Supabase Kelas
+async function bukaSesi() {
+    const pwd = document.getElementById('passGuru').value;
+    const code = document.getElementById('kodeSesi').value;
+    if(!pwd || !code) return alert('Mohon isi sandi dan kode sesi!');
+    
+    const { data, error } = await supabaseClient.from('sessions').insert([{ session_code: code, teacher_password: pwd }]);
+    if(error) return alert('Gagal membuka sesi: ' + error.message);
+    alert('Sesi kelas ' + code + ' berhasil dibuka secara online!');
+}
+
+async function kirimNilai() {
+    const name = document.getElementById('namaMurid').value;
+    const code = document.getElementById('masukKodeSesi').value;
+    const score = document.getElementById('nilaiKuis').value;
+    if(!name || !code || !score) return alert('Mohon lengkapi data murid!');
+    
+    const { data, error } = await supabaseClient.from('student_results').insert([{ session_code: code, student_name: name, score: parseInt(score) }]);
